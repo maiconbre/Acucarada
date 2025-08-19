@@ -5,18 +5,18 @@
 ### 📅 SEMANA 1: SETUP E FUNDAÇÃO
 
 #### 🔧 Setup Inicial do Projeto
-- [ ] **1.1** Criar repositório no GitHub
+- [x] **1.1** Criar repositório no GitHub
   - Inicializar com README.md
   - Configurar .gitignore para Next.js
   - Adicionar licença MIT
 
-- [ ] **1.2** Setup do projeto Next.js
+- [x] **1.2** Setup do projeto Next.js
   ```bash
   npx create-next-app@latest acucarada-catalogo --typescript --tailwind --eslint --app
   cd acucarada-catalogo
   ```
 
-- [ ] **1.3** Instalar dependências essenciais
+- [x] **1.3** Instalar dependências essenciais
   ```bash
   npm install @supabase/supabase-js @supabase/auth-helpers-nextjs
   npm install @radix-ui/react-* # componentes shadcn
@@ -25,37 +25,40 @@
   npm install next-themes
   ```
 
-- [ ] **1.4** Configurar Shadcn/ui
+- [x] **1.4** Configurar Shadcn/ui
   ```bash
   npx shadcn-ui@latest init
   npx shadcn-ui@latest add button input label textarea select dialog dropdown-menu table card badge toast form tabs avatar skeleton
   ```
 
 #### 🗄️ Setup Supabase
-- [ ] **1.5** Criar projeto no Supabase
+- [x] **1.5** Criar projeto no Supabase
   - Anotar URL e chaves de API
-  - Configurar autenticação por email
+  - **NÃO configurar Supabase Auth** (sistema hardcoded)
 
-- [ ] **1.6** Executar migrações SQL
+- [x] **1.6** Executar migrações SQL
   - Copiar conteúdo de `MIGRATIONS.sql`
   - Executar no SQL Editor do Supabase
   - Verificar criação das tabelas
+  - **Incluir tabela de usuários customizada**
 
 - [ ] **1.7** Configurar Storage
   - Criar bucket `product-images`
   - Configurar políticas de acesso
 
 #### ⚙️ Configuração Base
-- [ ] **1.8** Configurar variáveis de ambiente
+- [x] **1.8** Configurar variáveis de ambiente
   ```env
   NEXT_PUBLIC_SUPABASE_URL=
   NEXT_PUBLIC_SUPABASE_ANON_KEY=
   SUPABASE_SERVICE_ROLE_KEY=
   NEXT_PUBLIC_SITE_URL=http://localhost:3000
   NEXT_PUBLIC_WHATSAPP_NUMBER=5511999999999
+  JWT_SECRET=sua_chave_secreta_jwt_aqui
+  BCRYPT_ROUNDS=12
   ```
 
-- [ ] **1.9** Criar estrutura de pastas
+- [x] **1.9** Criar estrutura de pastas
   ```
   src/
   ├── app/
@@ -64,24 +67,88 @@
   └── types/
   ```
 
-- [ ] **1.10** Setup cliente Supabase
+- [x] **1.10** Setup cliente Supabase
   - Criar `lib/supabase.ts`
   - Configurar cliente para browser e servidor
+  - **Apenas para dados, não para autenticação**
 
-#### 🔐 Sistema de Autenticação
-- [ ] **1.11** Criar middleware de autenticação
+#### 🔐 Sistema de Autenticação Hardcoded
+- [x] **1.11** Criar sistema de autenticação customizado
+  - **Usuário inicial**: admin / admin123
+  - **2 níveis**: superadmin e admin
+  - **Sem recuperação de senha** (segurança)
+  - **Sem criação de conta pública**
+
+- [x] **1.12** Middleware de autenticação
   - Proteger rotas `/admin/*`
+  - Verificar sessão via cookies/JWT
   - Redirect para login se não autenticado
+  - **Não usar Supabase Auth**
 
-- [ ] **1.12** Página de login
-  - Formulário com email/senha
+- [x] **1.13** Página de login
+  - Formulário com usuário/senha
   - Validação com Zod
-  - Integração com Supabase Auth
+  - **Sistema de autenticação próprio**
+  - Hash de senhas com bcrypt
 
-- [ ] **1.13** Layout base admin
+- [x] **1.14** Layout base admin
   - Sidebar com navegação
-  - Header com logout
+  - Header com logout e info do usuário
   - Área de conteúdo principal
+  - **Diferentes permissões por nível**
+
+- [x] **1.15** Gestão de usuários (apenas superadmin)
+  - Alterar própria senha
+  - Criar/editar 1 usuário admin adicional
+  - **Admin não pode criar usuários**
+
+---
+
+## 🔐 DETALHES DO SISTEMA DE AUTENTICAÇÃO CUSTOMIZADO
+
+### 🎯 Estratégia de Segurança
+O projeto **NÃO utilizará** o Supabase Auth para evitar criação de contas indesejadas e aumentar a segurança. Será implementado um sistema próprio com as seguintes características:
+
+#### 👥 Estrutura de Usuários
+- **Superadmin**: 
+  - Usuário: `admin`
+  - Senha inicial: `admin123`
+  - Pode alterar própria senha
+  - Pode criar/editar 1 usuário admin adicional
+  - Acesso total ao sistema
+
+- **Admin** (máximo 1):
+  - Criado apenas pelo superadmin
+  - Pode alterar própria senha
+  - **NÃO pode criar outros usuários**
+  - Acesso às funcionalidades básicas
+
+#### 🔒 Implementação Técnica
+```typescript
+// Estrutura da tabela users
+interface User {
+  id: string;
+  username: string;
+  password_hash: string; // bcrypt
+  role: 'superadmin' | 'admin';
+  created_at: Date;
+  updated_at: Date;
+  last_login?: Date;
+}
+
+// Sistema de autenticação
+- JWT para sessões
+- Cookies httpOnly para segurança
+- Hash bcrypt para senhas
+- Middleware para proteção de rotas
+```
+
+#### 🚫 Restrições de Segurança
+- **Sem recuperação de senha** (contato direto necessário)
+- **Sem criação pública de contas**
+- **Máximo 2 usuários no sistema**
+- **Sessões com expiração**
+- **Logs de acesso**
 
 ---
 
@@ -182,6 +249,13 @@
   - SEO global
   - Cores e branding
   - Textos padrão
+
+- [ ] **3.9** Gestão de usuários (apenas superadmin)
+  - Alterar própria senha
+  - Criar usuário admin adicional (máximo 1)
+  - Editar dados do admin existente
+  - **Logs de acesso e atividades**
+  - **Admin não vê esta seção**
 
 ---
 

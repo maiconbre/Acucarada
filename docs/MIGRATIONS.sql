@@ -5,14 +5,17 @@
 -- 1. CRIAÇÃO DAS TABELAS PRINCIPAIS
 -- =============================================
 
--- Tabela de perfis de usuário (estende auth.users)
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
+-- Tabela de usuários customizada (sistema hardcoded)
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
   full_name TEXT,
-  role TEXT DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin')),
-  avatar_url TEXT,
-  phone TEXT,
+  role TEXT DEFAULT 'admin' CHECK (role IN ('admin', 'superadmin')),
+  is_active BOOLEAN DEFAULT true,
+  last_login TIMESTAMP WITH TIME ZONE,
+  login_attempts INTEGER DEFAULT 0,
+  locked_until TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -89,6 +92,19 @@ CREATE TABLE IF NOT EXISTS analytics (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Tabela de logs de acesso (auditoria)
+CREATE TABLE IF NOT EXISTS access_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  username TEXT,
+  action TEXT NOT NULL, -- 'login', 'logout', 'failed_login', 'password_change'
+  ip_address INET,
+  user_agent TEXT,
+  success BOOLEAN DEFAULT true,
+  details JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 2. ÍNDICES PARA PERFORMANCE
 -- =============================================
 
@@ -116,6 +132,17 @@ CREATE INDEX IF NOT EXISTS idx_settings_category ON settings(category);
 CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_created_at ON analytics(created_at);
 
+-- Índices para users
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
+
+-- Índices para access_logs
+CREATE INDEX IF NOT EXISTS idx_access_logs_user_id ON access_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_access_logs_username ON access_logs(username);
+CREATE INDEX IF NOT EXISTS idx_access_logs_action ON access_logs(action);
+CREATE INDEX IF NOT EXISTS idx_access_logs_created_at ON access_logs(created_at);
+
 -- 3. TRIGGERS PARA UPDATED_AT
 -- =============================================
 
@@ -129,7 +156,7 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers para todas as tabelas com updated_at
-CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories
@@ -145,12 +172,13 @@ CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings
 -- =============================================
 
 -- Habilitar RLS em todas as tabelas
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE access_logs ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para leitura pública (dados ativos)
 CREATE POLICY "Public read categories" ON categories
@@ -171,24 +199,30 @@ CREATE POLICY "Public read product_images" ON product_images
 CREATE POLICY "Public read settings" ON settings
     FOR SELECT USING (is_public = true);
 
--- Políticas para administradores (acesso completo quando autenticado)
-CREATE POLICY "Admin full access profiles" ON profiles
-    FOR ALL USING (auth.uid() = id OR auth.role() = 'authenticated');
+-- Políticas para administradores (sistema customizado - será controlado pela aplicação)
+-- Nota: Como não usamos Supabase Auth, as políticas serão mais simples
+-- O controle de acesso será feito principalmente na aplicação
 
-CREATE POLICY "Admin full access categories" ON categories
-    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Users table access" ON users
+    FOR ALL USING (true); -- Controlado pela aplicação
 
-CREATE POLICY "Admin full access products" ON products
-    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin access categories" ON categories
+    FOR ALL USING (true); -- Controlado pela aplicação
 
-CREATE POLICY "Admin full access product_images" ON product_images
-    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin access products" ON products
+    FOR ALL USING (true); -- Controlado pela aplicação
 
-CREATE POLICY "Admin full access settings" ON settings
-    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin access product_images" ON product_images
+    FOR ALL USING (true); -- Controlado pela aplicação
 
-CREATE POLICY "Admin full access analytics" ON analytics
-    FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin access settings" ON settings
+    FOR ALL USING (true); -- Controlado pela aplicação
+
+CREATE POLICY "Admin access analytics" ON analytics
+    FOR ALL USING (true); -- Controlado pela aplicação
+
+CREATE POLICY "Admin access logs" ON access_logs
+    FOR ALL USING (true); -- Controlado pela aplicação
 
 -- 5. STORAGE BUCKETS E POLÍTICAS
 -- =============================================
@@ -203,11 +237,10 @@ VALUES (
     ARRAY['image/jpeg', 'image/png', 'image/webp']
 ) ON CONFLICT (id) DO NOTHING;
 
--- Política para upload (apenas usuários autenticados)
-CREATE POLICY "Authenticated upload product images" ON storage.objects
+-- Política para upload (controlado pela aplicação)
+CREATE POLICY "Upload product images" ON storage.objects
     FOR INSERT WITH CHECK (
         bucket_id = 'product-images' 
-        AND auth.role() = 'authenticated'
         AND (storage.foldername(name))[1] = 'products'
     );
 
@@ -215,12 +248,9 @@ CREATE POLICY "Authenticated upload product images" ON storage.objects
 CREATE POLICY "Public read product images" ON storage.objects
     FOR SELECT USING (bucket_id = 'product-images');
 
--- Política para delete (apenas usuários autenticados)
-CREATE POLICY "Authenticated delete product images" ON storage.objects
-    FOR DELETE USING (
-        bucket_id = 'product-images' 
-        AND auth.role() = 'authenticated'
-    );
+-- Política para delete (controlado pela aplicação)
+CREATE POLICY "Delete product images" ON storage.objects
+    FOR DELETE USING (bucket_id = 'product-images');
 
 -- 6. FUNÇÕES UTILITÁRIAS
 -- =============================================
@@ -253,6 +283,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 7. DADOS INICIAIS (SEED)
 -- =============================================
+
+-- Inserir usuário superadmin padrão
+-- Senha: admin123 (hash bcrypt com 12 rounds)
+-- IMPORTANTE: Alterar a senha após primeiro login!
+INSERT INTO users (username, password_hash, full_name, role, is_active) VALUES
+('admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBdXig/pxmcxHK', 'Super Administrador', 'superadmin', true)
+ON CONFLICT (username) DO NOTHING;
 
 -- Inserir configurações padrão
 INSERT INTO settings (key, value, description, category, is_public) VALUES
