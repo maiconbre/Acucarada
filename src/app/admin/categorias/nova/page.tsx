@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { ImageUpload, type ImagePreview } from '@/components/ui/image-upload';
+import { ImageUpload, ImagePreview } from '@/components/ui/image-upload';
 
 export default function NovaCategoriaPage() {
   const router = useRouter();
@@ -94,7 +94,7 @@ export default function NovaCategoriaPage() {
       // Obter URL da imagem se houver (já foi enviada pelo ImageUpload)
       let imageUrl = null;
       if (images.length > 0) {
-        imageUrl = getImageUrl(images[0]);
+        imageUrl = images[0] ? getImageUrl(images[0]) : null;
       }
 
       // Check if slug already exists

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Pagination, PaginationInfo } from '@/components/ui/pagination';
-import { getProducts } from '@/lib/actions/products';
+import { getProducts } from '@/lib/client/products';
 import { generateWhatsAppURL } from '@/lib/utils/product-utils';
 
 interface Product {

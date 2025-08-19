@@ -63,13 +63,13 @@ async function ProductData({ slug }: { slug: string }) {
 // Componente para buscar produtos relacionados
 async function RelatedProductsData({ product }: { product: Product }) {
   try {
-    if (!product.category?.[0]?.id) {
+    if (!product.category?.id) {
       return [];
     }
     
     const relatedProducts = await getRelatedProducts(
       product.id, 
-      product.category[0].id, 
+      product.category.id, 
       4
     );
     

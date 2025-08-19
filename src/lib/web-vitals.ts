@@ -1,5 +1,13 @@
 import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
 
+// Declarações de tipo para window
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+    va?: (...args: any[]) => void;
+  }
+}
+
 function sendToAnalytics(metric: any) {
   // Enviar métricas para analytics (Google Analytics, Vercel Analytics, etc.)
   if (typeof window !== 'undefined' && window.gtag) {

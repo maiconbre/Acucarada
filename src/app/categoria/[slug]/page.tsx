@@ -71,10 +71,10 @@ async function CategoryData({ slug }: { slug: string }) {
 
 // Componente para buscar produtos da categoria
 async function CategoryProductsData({ 
-  categoryId, 
+  categorySlug, 
   searchParams 
 }: { 
-  categoryId: string;
+  categorySlug: string;
   searchParams: {
     search?: string;
     sort?: string;
@@ -84,20 +84,18 @@ async function CategoryProductsData({
   try {
     const page = parseInt(searchParams.page || '1');
     const limit = 12;
-    const offset = (page - 1) * limit;
     
-    const products = await getProductsByCategory({
-      categoryId,
-      search: searchParams.search,
-      sortBy: searchParams.sort as any,
-      limit,
-      offset
-    });
+    const result = await getProductsByCategory(categorySlug, page, limit);
     
-    return products;
+    return {
+      products: result.products,
+      total: result.totalCount,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage
+    };
   } catch (error) {
     console.error('Erro ao buscar produtos da categoria:', error);
-    return { products: [], total: 0 };
+    return { products: [], total: 0, totalPages: 1, currentPage: 1 };
   }
 }
 
@@ -183,7 +181,8 @@ async function CategoryWithStreaming({
       {/* Produtos - carrega de forma independente */}
       <Suspense fallback={<CategoryProductsSkeleton />}>
         <CategoryProductsSection 
-          categoryId={category.id} 
+          categorySlug={slug}
+          category={category}
           searchParams={searchParams}
         />
       </Suspense>
@@ -193,24 +192,32 @@ async function CategoryWithStreaming({
 
 // Seção de produtos com streaming
 async function CategoryProductsSection({ 
-  categoryId, 
-  searchParams 
+  categorySlug, 
+  searchParams,
+  category 
 }: { 
-  categoryId: string;
+  categorySlug: string;
+  category: any;
   searchParams: {
     search?: string;
     sort?: string;
     page?: string;
   };
 }) {
-  const { products, total } = await CategoryProductsData({ categoryId, searchParams });
+  const { products, total, totalPages, currentPage } = await CategoryProductsData({ categorySlug, searchParams });
   
   return (
     <CategoryClient 
+      category={category}
       initialProducts={products}
-      totalProducts={total}
-      categoryId={categoryId}
-      initialSearchParams={searchParams}
+      initialTotalCount={total}
+      initialTotalPages={totalPages}
+      initialCurrentPage={currentPage}
+      initialFilters={{
+        search: searchParams.search || '',
+        sortBy: searchParams.sort || 'name',
+        sortOrder: 'asc'
+      }}
     />
   );
 }
