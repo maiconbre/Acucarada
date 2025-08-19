@@ -4,15 +4,7 @@ import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== DEBUG SESSION API ===');
-     
-     // Debug: verificar cookies
-     const cookieStore = await cookies();
-    const authCookie = cookieStore.get('auth-token');
-    console.log('Auth cookie:', authCookie?.value ? 'EXISTS' : 'NOT_FOUND');
-    
     const session = await getCurrentSession();
-    console.log('Session result:', session ? 'VALID' : 'INVALID');
 
     if (!session) {
       return NextResponse.json(

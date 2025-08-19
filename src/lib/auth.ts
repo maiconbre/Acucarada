@@ -29,22 +29,16 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
 
 // Utilitários JWT
 export const generateToken = (user: User): string => {
-  console.log('Generating token for user:', user.id, user.username);
-  
   const payload = {
     userId: user.id,
     username: user.username,
     role: user.role,
   };
-
-  console.log('JWT payload:', payload);
-  console.log('JWT_SECRET exists:', !!JWT_SECRET);
   
   const token = jwt.sign(payload, JWT_SECRET, {
     expiresIn: AUTH_CONFIG.JWT_EXPIRES_IN,
   });
   
-  console.log('Token generated, length:', token.length);
   return token;
 };
 
@@ -208,14 +202,9 @@ export const authenticate = async (
   request?: NextRequest
 ): Promise<AuthResponse<{ user: User; token: string }>> => {
   const { username, password } = credentials;
-  
-  console.log('=== DEBUG AUTHENTICATE ===');
-  console.log('Username:', username);
-  console.log('Password length:', password.length);
 
   // Verificar tentativas de login
   const canAttempt = await checkLoginAttempts(username);
-  console.log('Can attempt login:', canAttempt);
   
   if (!canAttempt) {
     await logAccess(username, 'login_failed', false, request, 'Account locked');
@@ -236,11 +225,6 @@ export const authenticate = async (
     .select('*')
     .eq('username', username)
     .single();
-
-  console.log('User found:', user ? 'YES' : 'NO');
-  if (user) {
-    console.log('User active:', user.is_active);
-  }
 
   if (!user) {
     await logAccess(username, 'login_failed', false, request, 'User not found');
@@ -266,9 +250,7 @@ export const authenticate = async (
   }
 
   // Verificar senha
-  console.log('Verifying password...');
   const isValidPassword = await verifyPassword(password, user.password_hash);
-  console.log('Password valid:', isValidPassword);
   
   if (!isValidPassword) {
     await incrementLoginAttempts(username);

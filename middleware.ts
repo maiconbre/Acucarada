@@ -25,6 +25,7 @@ export function middleware(request: NextRequest) {
 
     // Verificar se o token é válido
     const payload = verifyToken(token);
+    
     if (!payload) {
       // Token inválido, redirecionar para login
       const loginUrl = new URL('/admin/login', request.url);
