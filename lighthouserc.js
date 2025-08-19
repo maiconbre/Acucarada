@@ -2,20 +2,26 @@ module.exports = {
   ci: {
     collect: {
       url: [
-        'https://acucarada.vercel.app/',
-        'https://acucarada.vercel.app/catalogo',
-        'https://acucarada.vercel.app/sobre',
+        'http://localhost:3000/',
+        'http://localhost:3000/catalogo',
+        'http://localhost:3000/categoria/doces',
+        'http://localhost:3000/produto/brigadeiro-gourmet',
       ],
-      startServerCommand: 'npm run start',
+      startServerCommand: 'npm run dev',
       numberOfRuns: 3,
     },
     assert: {
       assertions: {
-        'categories:performance': ['warn', { minScore: 0.8 }],
+        'categories:performance': ['error', { minScore: 0.9 }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
-        'categories:best-practices': ['warn', { minScore: 0.8 }],
+        'categories:best-practices': ['error', { minScore: 0.9 }],
         'categories:seo': ['error', { minScore: 0.9 }],
-        'categories:pwa': ['warn', { minScore: 0.6 }],
+        'categories:pwa': ['warn', { minScore: 0.7 }],
+        // Core Web Vitals específicos
+        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
+        'first-contentful-paint': ['error', { maxNumericValue: 1800 }],
+        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        'total-blocking-time': ['error', { maxNumericValue: 200 }],
       },
     },
     upload: {

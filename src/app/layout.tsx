@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
+import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: 'swap', // Otimização de carregamento de fonte
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -57,9 +60,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        {/* Preload de recursos críticos */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.whatsapp.com" />
+        
+        {/* Otimizações de performance */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#f43f5e" />
+        
+        {/* Preload de imagens críticas */}
+        <link rel="preload" as="image" href="/hero-image.webp" type="image/webp" />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
         {children}
         <Toaster />
+        <WebVitalsReporter />
       </body>
     </html>
   );

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, Heart, ShoppingBag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { generateWhatsAppURL } from '@/lib/utils/product-utils';
 
 interface Product {
   id: string;
@@ -46,12 +48,21 @@ export function CatalogSection() {
 
         if (error) {
           console.error('Erro ao buscar produtos:', error);
+          setProducts([]);
           return;
         }
 
-        setProducts(data || []);
+        // Validar se os dados são válidos
+        if (!data || !Array.isArray(data)) {
+          console.error('Dados inválidos recebidos da API:', data);
+          setProducts([]);
+          return;
+        }
+
+        setProducts(data);
       } catch (error) {
         console.error('Erro ao buscar produtos:', error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -60,17 +71,7 @@ export function CatalogSection() {
     fetchProducts();
   }, []);
 
-  const generateWhatsAppURL = (product: Product) => {
-    const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5511999999999';
-    const message = `Olá Açucarada! Gostaria de fazer um pedido:
 
-🧁 ${product.name}
-💰 R$ ${product.price.toFixed(2)}
-
-Poderia me informar sobre disponibilidade e entrega?`;
-    
-    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-  };
 
   if (loading) {
     return (
@@ -157,10 +158,11 @@ Poderia me informar sobre disponibilidade e entrega?`;
                   {/* Product Image */}
                   <div className="aspect-square bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden">
                     {product.product_images?.[0] ? (
-                      <img
+                      <Image
                         src={product.product_images[0].image_url}
                         alt={product.product_images[0].alt_text || product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

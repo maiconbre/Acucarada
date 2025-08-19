@@ -122,6 +122,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validar se os dados são válidos
+    if (!Array.isArray(products)) {
+      console.error('Invalid products data received:', products);
+      return NextResponse.json(
+        { success: false, error: { message: 'Dados inválidos recebidos', code: 'INVALID_DATA' } },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -163,7 +172,7 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           error: { 
-            message: validationResult.error.issues[0].message, 
+            message: validationResult.error.issues[0]?.message || 'Dados inválidos', 
             code: 'VALIDATION_ERROR',
             details: validationResult.error.issues
           } 

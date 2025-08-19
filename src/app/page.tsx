@@ -1,6 +1,6 @@
 import { Navbar } from '@/components/public/Navbar';
 import { HeroSection } from '@/components/public/HeroSection';
-import { CatalogSection } from '@/components/public/CatalogSection';
+import { FeaturedProducts } from '@/components/server/FeaturedProducts';
 import { AboutSection } from '@/components/public/AboutSection';
 import { Footer } from '@/components/public/Footer';
 import { WhatsAppButton } from '@/components/public/WhatsAppButton';
@@ -11,7 +11,7 @@ export default function Home() {
       <Navbar />
       <main>
         <HeroSection />
-        <CatalogSection />
+        <FeaturedProducts />
         <AboutSection />
       </main>
       <Footer />
