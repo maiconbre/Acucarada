@@ -68,7 +68,13 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
   const { data: products, error, count } = await query;
 
   if (error) {
-    console.error('Erro ao buscar produtos:', error);
+    console.error('Erro ao buscar produtos:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     throw new Error('Falha ao carregar produtos');
   }
 
@@ -102,7 +108,13 @@ export async function getFeaturedProducts(limit: number = 6) {
     .limit(limit);
 
   if (error) {
-    console.error('Erro ao buscar produtos em destaque:', error);
+    console.error('Erro ao buscar produtos em destaque:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     throw new Error('Falha ao carregar produtos em destaque');
   }
 
@@ -127,7 +139,13 @@ export async function getProductBySlug(slug: string) {
     .single();
 
   if (error) {
-    console.error('Erro ao buscar produto:', error);
+    console.error('Erro ao buscar produto:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     return null;
   }
 
@@ -156,7 +174,13 @@ export async function getProductsByCategory(categorySlug: string, page: number =
     .range(from, to);
 
   if (error) {
-    console.error('Erro ao buscar produtos por categoria:', error);
+    console.error('Erro ao buscar produtos por categoria:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     throw new Error('Falha ao carregar produtos da categoria');
   }
 

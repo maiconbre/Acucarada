@@ -7,9 +7,8 @@ import { Footer } from '@/components/public/Footer';
 import { WhatsAppButton } from '@/components/public/WhatsAppButton';
 import { CatalogClient } from '@/components/client/CatalogClient';
 import { CatalogSkeleton } from '@/components/ui/CatalogSkeleton';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorButton } from '@/components/client/ErrorButton';
-import { CACHE_CONFIGS } from '@/lib/cache';
+
 
 // Configuração de cache para a página
 export const revalidate = 3600; // 1 hora

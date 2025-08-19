@@ -121,7 +121,13 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
   const { data: products, error, count } = await query;
 
   if (error) {
-    console.error('Erro ao buscar produtos:', error);
+    console.error('Erro ao buscar produtos:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     throw new Error('Falha ao carregar produtos');
   }
 
@@ -156,7 +162,13 @@ export const getFeaturedProducts = unstable_cache(
       .limit(limit);
 
     if (error) {
-      console.error('Erro ao buscar produtos em destaque:', error);
+      console.error('Erro ao buscar produtos em destaque:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
       throw new Error('Falha ao carregar produtos em destaque');
     }
 
@@ -222,7 +234,13 @@ export const getRelatedProducts = unstable_cache(
       .limit(limit);
 
     if (error) {
-      console.error('Erro ao buscar produtos relacionados:', error);
+      console.error('Erro ao buscar produtos relacionados:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
       return [];
     }
 
@@ -258,7 +276,13 @@ export const getProductsByCategory = unstable_cache(
       .range(from, to);
 
     if (error) {
-      console.error('Erro ao buscar produtos por categoria:', error);
+      console.error('Erro ao buscar produtos por categoria:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
       throw new Error('Falha ao carregar produtos da categoria');
     }
 
@@ -735,10 +759,6 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
  * Server Action para criar produto com redirecionamento
  */
 export async function createProductWithRedirect(formData: FormData) {
-  // Extract image URLs from form data
-  const imageUrlsString = formData.get('image_urls') as string;
-  const imageUrls = imageUrlsString ? JSON.parse(imageUrlsString) : [];
-  
   const result = await createProduct(formData);
   
   if (result.success) {

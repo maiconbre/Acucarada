@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { getProductBySlug, getRelatedProducts, incrementProductViews, generateProductMetadata } from '@/lib/actions/products';
-import { CACHE_CONFIGS } from '@/lib/cache';
 import ProductClient from '@/components/client/ProductClient';
 import ProductSkeleton from '@/components/ui/ProductSkeleton';
 import { Suspense } from 'react';
@@ -75,7 +74,11 @@ async function RelatedProductsData({ product }: { product: Product }) {
     
     return relatedProducts || [];
   } catch (error) {
-    console.error('Erro ao buscar produtos relacionados:', error);
+    console.error('Erro ao buscar produtos relacionados:', {
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      details: error instanceof Error ? error.stack : undefined,
+      fullError: error
+    });
     return [];
   }
 }

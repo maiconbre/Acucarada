@@ -64,7 +64,7 @@ export async function DELETE(
     }
 
     // Verificar se não é a única imagem do produto
-    const { data: allImages, count } = await supabase
+    const { count } = await supabase
       .from('product_images')
       .select('id', { count: 'exact' })
       .eq('product_id', id);

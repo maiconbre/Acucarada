@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentSession, createUser, isSuperAdmin } from '@/lib/auth';
+import { getCurrentSession, createUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 const createUserSchema = z.object({
@@ -10,7 +10,7 @@ const createUserSchema = z.object({
 });
 
 // GET - Listar usuários (apenas superadmin)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getCurrentSession();
     if (!session) {
@@ -96,12 +96,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status: statusCode });
     }
 
-    // Remover senha hash da resposta
-    const { password_hash, ...userWithoutPassword } = result.data!;
-
     return NextResponse.json({
       success: true,
-      data: userWithoutPassword,
+      data: result.data,
     }, { status: 201 });
 
   } catch (error) {

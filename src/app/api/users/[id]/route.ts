@@ -141,12 +141,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(result, { status: 400 });
     }
 
-    // Remover senha hash da resposta
-    const { password_hash, ...userWithoutPassword } = result.data!;
-
     return NextResponse.json({
       success: true,
-      data: userWithoutPassword,
+      data: result.data,
     });
 
   } catch (error) {

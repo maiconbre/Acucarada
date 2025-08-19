@@ -94,7 +94,11 @@ async function CategoryProductsData({
       currentPage: result.currentPage
     };
   } catch (error) {
-    console.error('Erro ao buscar produtos da categoria:', error);
+    console.error('Erro ao buscar produtos da categoria:', {
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      details: error instanceof Error ? error.stack : undefined,
+      fullError: error
+    });
     return { products: [], total: 0, totalPages: 1, currentPage: 1 };
   }
 }

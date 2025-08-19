@@ -47,7 +47,13 @@ export function CatalogSection() {
           .limit(6);
 
         if (error) {
-          console.error('Erro ao buscar produtos:', error);
+          console.error('Erro ao buscar produtos:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            fullError: error
+          });
           setProducts([]);
           return;
         }
@@ -61,7 +67,11 @@ export function CatalogSection() {
 
         setProducts(data);
       } catch (error) {
-        console.error('Erro ao buscar produtos:', error);
+        console.error('Erro ao buscar produtos:', {
+          message: error instanceof Error ? error.message : 'Erro desconhecido',
+          stack: error instanceof Error ? error.stack : undefined,
+          fullError: error
+        });
         setProducts([]);
       } finally {
         setLoading(false);

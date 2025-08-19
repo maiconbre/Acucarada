@@ -85,7 +85,13 @@ async function getPopularProducts(): Promise<PopularProduct[]> {
     .limit(5);
 
   if (error) {
-    console.error('Erro ao buscar produtos populares:', error);
+    console.error('Erro ao buscar produtos populares:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     return [];
   }
 
@@ -113,7 +119,13 @@ async function getRecentProducts(): Promise<RecentProduct[]> {
     .limit(5);
 
   if (error) {
-    console.error('Erro ao buscar produtos recentes:', error);
+    console.error('Erro ao buscar produtos recentes:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     return [];
   }
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, Grid, List, Heart, ShoppingBag } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Grid, List, Heart, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -72,7 +72,6 @@ export default function CategoryClient({
   initialFilters
 }: CategoryClientProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   // State
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -122,7 +121,11 @@ export default function CategoryClient({
       setTotalProducts(result.totalCount);
       setTotalPages(result.totalPages);
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('Erro ao buscar produtos:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: error
+      });
     } finally {
       setLoading(false);
     }
@@ -389,7 +392,7 @@ export default function CategoryClient({
             )}
             {searchTerm && (
               <span className="ml-2">
-                para "<strong>{searchTerm}</strong>"
+                para &quot;<strong>{searchTerm}</strong>&quot;
               </span>
             )}
           </p>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Search, Filter, Grid, List, Heart, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -71,7 +71,6 @@ export function CatalogClient({
   initialFilters
 }: CatalogClientProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   // Estados locais
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -123,7 +122,11 @@ export function CatalogClient({
       setTotalProducts(result.totalCount);
       setTotalPages(result.totalPages);
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('Erro ao buscar produtos:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: error
+      });
       setProducts([]);
       setTotalProducts(0);
       setTotalPages(0);
@@ -450,12 +453,12 @@ export function CatalogClient({
             )}
             {searchTerm && (
               <span className="ml-2">
-                para "<strong>{searchTerm}</strong>"
+                para &quot;<strong>{searchTerm}</strong>&quot;
               </span>
             )}
             {selectedCategory !== 'all' && (
               <span className="ml-2">
-                na categoria "<strong>{categories.find(c => c.slug === selectedCategory)?.name}</strong>"
+                na categoria &quot;<strong>{categories.find(c => c.slug === selectedCategory)?.name}</strong>&quot;
               </span>
             )}
           </p>

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { ArrowRight, Heart, ShoppingBag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { generateWhatsAppURL } from '@/lib/utils/product-utils';
-import { CACHE_CONFIGS } from '@/lib/cache';
+
 
 interface Product {
   id: string;
@@ -41,7 +41,13 @@ async function getFeaturedProducts(): Promise<Product[]> {
     .limit(6);
 
   if (error) {
-    console.error('Erro ao buscar produtos:', error);
+    console.error('Erro ao buscar produtos:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      fullError: error
+    });
     return [];
   }
 

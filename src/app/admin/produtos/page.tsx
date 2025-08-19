@@ -48,20 +48,20 @@ interface Product {
   id: string;
   name: string;
   short_description: string;
+  description?: string;
   price: number;
   slug: string;
   is_active: boolean;
   is_featured: boolean;
   views_count: number;
+  category_id: string;
   created_at: string;
   updated_at: string;
-  category: {
-    categories: {
-      id: string;
-      name: string;
-      slug: string;
-    }[];
-  }[] | null;
+  categories: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
   product_images: {
     id: string;
     image_url: string;
@@ -132,19 +132,19 @@ export default function AdminProductsPage() {
           id,
           name,
           short_description,
+          description,
           price,
           slug,
+          category_id,
           is_active,
           is_featured,
           views_count,
           created_at,
           updated_at,
-          category:product_categories!left(
-            categories!inner(
-              id,
-              name,
-              slug
-            )
+          categories(
+            id,
+            name,
+            slug
           ),
           product_images!left(
             id,
@@ -207,12 +207,18 @@ export default function AdminProductsPage() {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Erro ao buscar produtos:', error);
+        console.error('Erro ao buscar produtos:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error
+        });
         setProducts([]);
         setTotalProducts(0);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar os produtos.",
+          description: `Não foi possível carregar os produtos: ${error.message || 'Erro desconhecido'}`,
           variant: "destructive",
         });
         return;
@@ -231,12 +237,16 @@ export default function AdminProductsPage() {
       setTotalPages(Math.ceil((count || 0) / itemsPerPage));
 
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('Erro ao buscar produtos (catch):', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: error
+      });
       setProducts([]);
       setTotalProducts(0);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os produtos.",
+        description: `Não foi possível carregar os produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
@@ -409,7 +419,7 @@ export default function AdminProductsPage() {
                     {product.short_description}
                   </p>
                   <div className="flex items-center gap-4 text-sm text-brown-500">
-                    <span>Categoria: {product.category?.[0]?.categories?.[0]?.name || 'Sem categoria'}</span>
+                    <span>Categoria: {product.categories?.name || 'Sem categoria'}</span>
                     <span>Criado: {formatDate(product.created_at)}</span>
                     <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
@@ -568,7 +578,7 @@ export default function AdminProductsPage() {
             </div>
             
             <div className="flex items-center justify-between text-xs text-brown-500">
-              <span>{product.category?.[0]?.categories?.[0]?.name || 'Sem categoria'}</span>
+              <span>{product.categories?.name || 'Sem categoria'}</span>
               <div className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
                 {product.views_count}
