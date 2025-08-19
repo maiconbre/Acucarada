@@ -20,9 +20,9 @@ const updateProductSchema = z.object({
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET - Buscar produto por ID
@@ -31,7 +31,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(
@@ -118,7 +118,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(
@@ -135,7 +135,7 @@ export async function PUT(
         { 
           success: false, 
           error: { 
-            message: validationResult.error.issues[0].message, 
+            message: validationResult.error.issues[0]?.message || 'Dados inválidos', 
             code: 'VALIDATION_ERROR',
             details: validationResult.error.issues
           } 
@@ -261,7 +261,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(

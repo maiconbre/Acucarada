@@ -1,0 +1,7 @@
+<svg width="1200" height="600" viewBox="0 0 1200 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="600" fill="#FFF9F5"/>
+  <rect x="100" y="100" width="1000" height="400" rx="20" fill="#FFE4E6"/>
+  <circle cx="600" cy="300" r="80" fill="#F43F5E"/>
+  <text x="600" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#78350F">Açucarada</text>
+  <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#92400E">Doces Artesanais</text>
+</svg>

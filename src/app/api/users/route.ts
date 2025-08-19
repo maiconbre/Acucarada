@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           error: { 
-            message: validationResult.error.issues[0].message, 
+            message: validationResult.error.issues[0]?.message || 'Dados inválidos', 
             code: 'INVALID_CREDENTIALS' 
           } 
         },

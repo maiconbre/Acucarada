@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -188,10 +189,11 @@ export default function CategoriasPage() {
         {/* Category Image */}
         <div className="aspect-video bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden">
           {category.image_url ? (
-            <img
+            <Image
               src={category.image_url}
               alt={category.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

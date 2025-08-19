@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,9 +56,11 @@ interface Product {
   created_at: string;
   updated_at: string;
   category: {
-    id: string;
-    name: string;
-    slug: string;
+    categories: {
+      id: string;
+      name: string;
+      slug: string;
+    }[];
   }[] | null;
   product_images: {
     id: string;
@@ -205,6 +208,8 @@ export default function AdminProductsPage() {
 
       if (error) {
         console.error('Erro ao buscar produtos:', error);
+        setProducts([]);
+        setTotalProducts(0);
         toast({
           title: "Erro",
           description: "Não foi possível carregar os produtos.",
@@ -213,12 +218,22 @@ export default function AdminProductsPage() {
         return;
       }
 
-      setProducts(data || []);
+      // Validar se os dados são válidos
+      if (!data || !Array.isArray(data)) {
+        console.error('Dados inválidos recebidos da API:', data);
+        setProducts([]);
+        setTotalProducts(0);
+        return;
+      }
+
+      setProducts(data);
       setTotalProducts(count || 0);
       setTotalPages(Math.ceil((count || 0) / itemsPerPage));
 
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
+      setProducts([]);
+      setTotalProducts(0);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os produtos.",
@@ -360,10 +375,12 @@ export default function AdminProductsPage() {
               {/* Image */}
               <div className="w-24 h-24 bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden flex-shrink-0">
                 {primaryImage ? (
-                  <img
+                  <Image
                     src={primaryImage.image_url}
                     alt={primaryImage.alt_text || product.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="96px"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -392,7 +409,7 @@ export default function AdminProductsPage() {
                     {product.short_description}
                   </p>
                   <div className="flex items-center gap-4 text-sm text-brown-500">
-                    <span>Categoria: {product.category?.[0]?.name || 'Sem categoria'}</span>
+                    <span>Categoria: {product.category?.[0]?.categories?.[0]?.name || 'Sem categoria'}</span>
                     <span>Criado: {formatDate(product.created_at)}</span>
                     <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
@@ -460,10 +477,12 @@ export default function AdminProductsPage() {
         <CardContent className="p-0">
           <div className="aspect-square bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden">
             {primaryImage ? (
-              <img
+              <Image
                 src={primaryImage.image_url}
                 alt={primaryImage.alt_text || product.name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -507,6 +526,13 @@ export default function AdminProductsPage() {
                       Editar
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/admin/produtos/${product.id}`}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => toggleProductStatus(product.id, product.is_active)}>
                     {product.is_active ? 'Desativar' : 'Ativar'}
                   </DropdownMenuItem>
@@ -542,7 +568,7 @@ export default function AdminProductsPage() {
             </div>
             
             <div className="flex items-center justify-between text-xs text-brown-500">
-              <span>{product.category?.[0]?.name || 'Sem categoria'}</span>
+              <span>{product.category?.[0]?.categories?.[0]?.name || 'Sem categoria'}</span>
               <div className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
                 {product.views_count}
@@ -586,7 +612,7 @@ export default function AdminProductsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/produtos/novo">
+          <Link href="/admin/produtos/novo" prefetch={true}>
             <Plus className="w-4 h-4 mr-2" />
             Novo Produto
           </Link>

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -12,7 +13,7 @@ interface PaginationProps {
   className?: string;
 }
 
-export function Pagination({
+export const Pagination = React.memo(function Pagination({
   currentPage,
   totalPages,
   onPageChange,
@@ -55,8 +56,8 @@ export function Pagination({
   };
 
   const visiblePages = getVisiblePages();
-  const showLeftEllipsis = visiblePages[0] > 1;
-  const showRightEllipsis = visiblePages[visiblePages.length - 1] < totalPages;
+  const showLeftEllipsis = visiblePages.length > 0 && visiblePages[0]! > 1;
+  const showRightEllipsis = visiblePages.length > 0 && visiblePages[visiblePages.length - 1]! < totalPages;
 
   return (
     <div className={`flex items-center justify-center gap-2 ${className}`}>
@@ -152,7 +153,7 @@ export function Pagination({
       )}
     </div>
   );
-}
+});
 
 // Componente adicional para informações de paginação
 interface PaginationInfoProps {
