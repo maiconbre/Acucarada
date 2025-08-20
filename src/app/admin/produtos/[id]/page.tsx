@@ -46,8 +46,8 @@ interface Product {
   preparation_time: string;
   is_active: boolean;
   is_featured: boolean;
-  meta_title: string;
-  meta_description: string;
+  seo_title: string;
+  seo_description: string;
   product_images: ProductImage[];
 }
 
@@ -85,8 +85,8 @@ export default function EditProductPage() {
     preparation_time: '',
     is_active: true,
     is_featured: false,
-    meta_title: '',
-    meta_description: '',
+    seo_title: '',
+    seo_description: '',
   });
 
   const supabase = createClient();
@@ -144,8 +144,8 @@ export default function EditProductPage() {
           preparation_time: data.preparation_time || '',
           is_active: data.is_active ?? true,
           is_featured: data.is_featured ?? false,
-          meta_title: data.meta_title || '',
-          meta_description: data.meta_description || '',
+          seo_title: data.seo_title || '',
+          seo_description: data.seo_description || '',
         });
         
         // Set existing images
@@ -456,23 +456,23 @@ export default function EditProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="meta_title">Meta Título</Label>
+                  <Label htmlFor="seo_title">Meta Título</Label>
                   <Input
-                    id="meta_title"
-                    name="meta_title"
-                    value={formData.meta_title}
-                    onChange={(e) => handleInputChange('meta_title', e.target.value)}
+                    id="seo_title"
+                    name="seo_title"
+                    value={formData.seo_title}
+                    onChange={(e) => handleInputChange('seo_title', e.target.value)}
                     placeholder="Título para SEO (deixe vazio para usar o nome do produto)"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="meta_description">Meta Descrição</Label>
+                  <Label htmlFor="seo_description">Meta Descrição</Label>
                   <Textarea
-                    id="meta_description"
-                    name="meta_description"
-                    value={formData.meta_description}
-                    onChange={(e) => handleInputChange('meta_description', e.target.value)}
+                    id="seo_description"
+                    name="seo_description"
+                    value={formData.seo_description}
+                    onChange={(e) => handleInputChange('seo_description', e.target.value)}
                     placeholder="Descrição para SEO (deixe vazio para usar a descrição curta)"
                     rows={3}
                   />

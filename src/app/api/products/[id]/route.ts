@@ -15,8 +15,8 @@ const updateProductSchema = z.object({
   preparation_time: z.string().optional(),
   is_active: z.boolean().optional(),
   is_featured: z.boolean().optional(),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
+  seo_title: z.string().optional(),
+  seo_description: z.string().optional(),
 });
 
 interface RouteParams {
@@ -57,8 +57,8 @@ export async function GET(
         ingredients,
         allergens,
         preparation_time,
-        meta_title,
-        meta_description,
+        seo_title,
+        seo_description,
         created_at,
         updated_at,
         category:categories(id, name, slug),
@@ -217,8 +217,8 @@ export async function PUT(
         ingredients,
         allergens,
         preparation_time,
-        meta_title,
-        meta_description,
+        seo_title,
+        seo_description,
         created_at,
         updated_at,
         category:categories(id, name, slug)

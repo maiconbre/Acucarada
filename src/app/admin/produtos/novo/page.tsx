@@ -52,8 +52,8 @@ export default function NovoProductPage() {
     preparation_time: '',
     is_active: true,
     is_featured: false,
-    meta_title: '',
-    meta_description: '',
+    seo_title: '',
+    seo_description: '',
   });
 
   const supabase = createClient();
@@ -340,23 +340,23 @@ export default function NovoProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="meta_title">Título SEO</Label>
+                  <Label htmlFor="seo_title">Título SEO</Label>
                   <Input
-                    id="meta_title"
-                    name="meta_title"
-                    value={formData.meta_title}
-                    onChange={(e) => handleInputChange('meta_title', e.target.value)}
+                    id="seo_title"
+                    name="seo_title"
+                    value={formData.seo_title}
+                    onChange={(e) => handleInputChange('seo_title', e.target.value)}
                     placeholder="Título para mecanismos de busca"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="meta_description">Descrição SEO</Label>
+                  <Label htmlFor="seo_description">Descrição SEO</Label>
                   <Textarea
-                    id="meta_description"
-                    name="meta_description"
-                    value={formData.meta_description}
-                    onChange={(e) => handleInputChange('meta_description', e.target.value)}
+                    id="seo_description"
+                    name="seo_description"
+                    value={formData.seo_description}
+                    onChange={(e) => handleInputChange('seo_description', e.target.value)}
                     placeholder="Descrição para mecanismos de busca"
                     rows={3}
                   />

@@ -28,8 +28,8 @@ const createProductSchema = z.object({
   preparation_time: z.string().optional(),
   is_active: z.boolean().default(true),
   is_featured: z.boolean().default(false),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
+  seo_title: z.string().optional(),
+  seo_description: z.string().optional(),
 });
 
 const updateProductSchema = z.object({
@@ -44,8 +44,8 @@ const updateProductSchema = z.object({
   preparation_time: z.string().optional(),
   is_active: z.boolean().optional(),
   is_featured: z.boolean().optional(),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
+  seo_title: z.string().optional(),
+  seo_description: z.string().optional(),
 });
 
 // Tipos para retorno das actions
@@ -395,8 +395,8 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
       preparation_time: formData.get('preparation_time') as string,
       is_active: formData.get('is_active') === 'true',
       is_featured: formData.get('is_featured') === 'true',
-      meta_title: formData.get('meta_title') as string,
-      meta_description: formData.get('meta_description') as string,
+      seo_title: formData.get('seo_title') as string,
+      seo_description: formData.get('seo_description') as string,
     };
 
     // Validar dados
@@ -524,7 +524,7 @@ export async function updateProduct(id: string, formData: FormData): Promise<Act
     const data: any = {};
     
     // Só incluir campos que foram fornecidos
-    const fields = ['name', 'slug', 'short_description', 'description', 'category_id', 'ingredients', 'allergens', 'preparation_time', 'meta_title', 'meta_description'];
+    const fields = ['name', 'slug', 'short_description', 'description', 'category_id', 'ingredients', 'allergens', 'preparation_time', 'seo_title', 'seo_description'];
     fields.forEach(field => {
       const value = formData.get(field) as string;
       if (value !== null && value !== '') {
