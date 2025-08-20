@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   
+  // Configuração de cache para build
+  cacheHandler: process.env.NODE_ENV === 'production' ? require.resolve('./cache-handler.js') : undefined,
+  cacheMaxMemorySize: 0, // Desabilita cache em memória para usar cache em disco
+  
   // Otimização de imagens
   images: {
     formats: ['image/webp', 'image/avif'],

@@ -4,6 +4,7 @@ import { FeaturedProducts } from '@/components/server/FeaturedProducts';
 import { AboutSection } from '@/components/public/AboutSection';
 import { Footer } from '@/components/public/Footer';
 import { WhatsAppButton } from '@/components/public/WhatsAppButton';
+import EnvCheck from '@/components/debug/EnvCheck';
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       </main>
       <Footer />
       <WhatsAppButton />
+      <EnvCheck />
     </div>
   );
 }
