@@ -70,8 +70,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#f43f5e" />
         
-        {/* Preload de imagens críticas */}
-        <link rel="preload" as="image" href="/hero-image.webp" type="image/webp" />
+        {/* Preload de imagens críticas removido - hero-image.webp não é usada */}
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning={true}>
         {children}
