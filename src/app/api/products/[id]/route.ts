@@ -15,14 +15,14 @@ const updateProductSchema = z.object({
   preparation_time: z.string().optional(),
   is_active: z.boolean().optional(),
   is_featured: z.boolean().optional(),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
+  seo_title: z.string().optional(),
+  seo_description: z.string().optional(),
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET - Buscar produto por ID
@@ -31,7 +31,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(
@@ -57,8 +57,8 @@ export async function GET(
         ingredients,
         allergens,
         preparation_time,
-        meta_title,
-        meta_description,
+        seo_title,
+        seo_description,
         created_at,
         updated_at,
         category:categories(id, name, slug),
@@ -118,7 +118,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(
@@ -135,7 +135,7 @@ export async function PUT(
         { 
           success: false, 
           error: { 
-            message: validationResult.error.issues[0].message, 
+            message: validationResult.error.issues[0]?.message || 'Dados inválidos', 
             code: 'VALIDATION_ERROR',
             details: validationResult.error.issues
           } 
@@ -217,8 +217,8 @@ export async function PUT(
         ingredients,
         allergens,
         preparation_time,
-        meta_title,
-        meta_description,
+        seo_title,
+        seo_description,
         created_at,
         updated_at,
         category:categories(id, name, slug)
@@ -261,7 +261,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(

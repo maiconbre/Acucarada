@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { MobileMenu } from './MobileMenu';
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,30 +29,35 @@ export function Navbar() {
             <Link 
               href="/" 
               className="text-brown-700 hover:text-rose-500 transition-colors font-medium"
+              prefetch={true}
             >
               Início
             </Link>
             <Link 
               href="/catalogo" 
               className="text-brown-700 hover:text-rose-500 transition-colors font-medium"
+              prefetch={true}
             >
               Catálogo
             </Link>
             <Link 
               href="/sobre" 
               className="text-brown-700 hover:text-rose-500 transition-colors font-medium"
+              prefetch={false}
             >
               Sobre
             </Link>
             <Link 
               href="/contato" 
               className="text-brown-700 hover:text-rose-500 transition-colors font-medium"
+              prefetch={false}
             >
               Contato
             </Link>
             <Link 
               href="/admin/login" 
               className="text-brown-500 hover:text-rose-500 transition-colors text-sm opacity-75"
+              prefetch={false}
             >
               Admin
             </Link>
@@ -75,56 +81,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-rose-100">
-            <div className="flex flex-col space-y-4">
-              <Link 
-                href="/" 
-                className="text-brown-700 hover:text-rose-500 transition-colors font-medium px-2 py-1"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Início
-              </Link>
-              <Link 
-                href="/catalogo" 
-                className="text-brown-700 hover:text-rose-500 transition-colors font-medium px-2 py-1"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Catálogo
-              </Link>
-              <Link 
-                href="/sobre" 
-                className="text-brown-700 hover:text-rose-500 transition-colors font-medium px-2 py-1"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sobre
-              </Link>
-              <Link 
-                href="/contato" 
-                className="text-brown-700 hover:text-rose-500 transition-colors font-medium px-2 py-1"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Contato
-              </Link>
-              <Link 
-                href="/admin/login" 
-                className="text-brown-500 hover:text-rose-500 transition-colors text-sm opacity-75 px-2 py-1"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Área Administrativa
-              </Link>
-              <a
-                href="https://wa.me/5511999999999?text=Olá%20Açucarada!%20Gostaria%20de%20fazer%20um%20pedido."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-gradient-to-r from-rose-400 to-rose-500 text-white px-6 py-3 rounded-full hover:from-rose-500 hover:to-rose-600 transition-all duration-300 font-medium shadow-lg text-center"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Fazer Pedido
-              </a>
-            </div>
-          </div>
-        )}
+        <MobileMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       </div>
     </nav>
   );

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -61,11 +62,7 @@ export default function CategoriasPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -97,7 +94,11 @@ export default function CategoriasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, toast]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const toggleCategoryStatus = async (category: Category) => {
     try {
@@ -188,10 +189,11 @@ export default function CategoriasPage() {
         {/* Category Image */}
         <div className="aspect-video bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden">
           {category.image_url ? (
-            <img
+            <Image
               src={category.image_url}
               alt={category.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -378,7 +380,7 @@ export default function CategoriasPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a categoria "{categoryToDelete?.name}"?
+              Tem certeza que deseja excluir a categoria &ldquo;{categoryToDelete?.name}&rdquo;?
               {categoryToDelete?.products_count && categoryToDelete.products_count > 0 && (
                 <span className="block mt-2 text-red-600 font-medium">
                   Esta categoria possui {categoryToDelete.products_count} produto{categoryToDelete.products_count !== 1 ? 's' : ''}. 

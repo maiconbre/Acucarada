@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authenticate, setAuthCookie } from '@/lib/auth';
+import { authenticate } from '@/lib/auth';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username é obrigatório'),

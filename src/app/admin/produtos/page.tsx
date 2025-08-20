@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,14 +48,16 @@ interface Product {
   id: string;
   name: string;
   short_description: string;
+  description?: string;
   price: number;
   slug: string;
   is_active: boolean;
   is_featured: boolean;
   views_count: number;
+  category_id: string;
   created_at: string;
   updated_at: string;
-  category: {
+  categories: {
     id: string;
     name: string;
     slug: string;
@@ -94,12 +97,7 @@ export default function AdminProductsPage() {
   const { toast } = useToast();
   const itemsPerPage = 12;
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [searchTerm, selectedCategory, statusFilter, sortBy, currentPage]);
-
-  async function fetchCategories() {
+  const fetchCategories = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -117,9 +115,9 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
     }
-  }
+  }, []);
 
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     try {
       const supabase = createClient();
       
@@ -129,19 +127,19 @@ export default function AdminProductsPage() {
           id,
           name,
           short_description,
+          description,
           price,
           slug,
+          category_id,
           is_active,
           is_featured,
           views_count,
           created_at,
           updated_at,
-          category:product_categories!left(
-            categories!inner(
-              id,
-              name,
-              slug
-            )
+          categories(
+            id,
+            name,
+            slug
           ),
           product_images!left(
             id,
@@ -204,30 +202,57 @@ export default function AdminProductsPage() {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Erro ao buscar produtos:', error);
+        console.error('Erro ao buscar produtos:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error
+        });
+        setProducts([]);
+        setTotalProducts(0);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar os produtos.",
+          description: `Não foi possível carregar os produtos: ${error.message || 'Erro desconhecido'}`,
           variant: "destructive",
         });
         return;
       }
 
-      setProducts(data || []);
+      // Validar se os dados são válidos
+      if (!data || !Array.isArray(data)) {
+        console.error('Dados inválidos recebidos da API:', data);
+        setProducts([]);
+        setTotalProducts(0);
+        return;
+      }
+
+      setProducts(data);
       setTotalProducts(count || 0);
       setTotalPages(Math.ceil((count || 0) / itemsPerPage));
 
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('Erro ao buscar produtos (catch):', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: error
+      });
+      setProducts([]);
+      setTotalProducts(0);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os produtos.",
+        description: `Não foi possível carregar os produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }
+  }, [searchTerm, selectedCategory, statusFilter, sortBy, currentPage, toast]);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
   async function handleDeleteProduct(productId: string) {
     try {
@@ -360,10 +385,12 @@ export default function AdminProductsPage() {
               {/* Image */}
               <div className="w-24 h-24 bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden flex-shrink-0">
                 {primaryImage ? (
-                  <img
+                  <Image
                     src={primaryImage.image_url}
                     alt={primaryImage.alt_text || product.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="96px"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -392,7 +419,7 @@ export default function AdminProductsPage() {
                     {product.short_description}
                   </p>
                   <div className="flex items-center gap-4 text-sm text-brown-500">
-                    <span>Categoria: {product.category?.[0]?.name || 'Sem categoria'}</span>
+                    <span>Categoria: {product.categories?.[0]?.name || 'Sem categoria'}</span>
                     <span>Criado: {formatDate(product.created_at)}</span>
                     <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
@@ -460,10 +487,12 @@ export default function AdminProductsPage() {
         <CardContent className="p-0">
           <div className="aspect-square bg-gradient-to-br from-rose-100 to-rose-200 relative overflow-hidden">
             {primaryImage ? (
-              <img
+              <Image
                 src={primaryImage.image_url}
                 alt={primaryImage.alt_text || product.name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -507,6 +536,13 @@ export default function AdminProductsPage() {
                       Editar
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/admin/produtos/${product.id}`}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => toggleProductStatus(product.id, product.is_active)}>
                     {product.is_active ? 'Desativar' : 'Ativar'}
                   </DropdownMenuItem>
@@ -542,7 +578,7 @@ export default function AdminProductsPage() {
             </div>
             
             <div className="flex items-center justify-between text-xs text-brown-500">
-              <span>{product.category?.[0]?.name || 'Sem categoria'}</span>
+              <span>{product.categories?.[0]?.name || 'Sem categoria'}</span>
               <div className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
                 {product.views_count}
@@ -586,7 +622,7 @@ export default function AdminProductsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/produtos/novo">
+          <Link href="/admin/produtos/novo" prefetch={true}>
             <Plus className="w-4 h-4 mr-2" />
             Novo Produto
           </Link>

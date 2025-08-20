@@ -3,10 +3,10 @@ import { getCurrentSession } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
     imageId: string;
-  };
+  }>;
 }
 
 // DELETE - Excluir imagem específica do produto (apenas usuários autenticados)
@@ -23,7 +23,7 @@ export async function DELETE(
       );
     }
 
-    const { id, imageId } = params;
+    const { id, imageId } = await params;
     
     if (!id || !imageId) {
       return NextResponse.json(
@@ -64,7 +64,7 @@ export async function DELETE(
     }
 
     // Verificar se não é a única imagem do produto
-    const { data: allImages, count } = await supabase
+    const { count } = await supabase
       .from('product_images')
       .select('id', { count: 'exact' })
       .eq('product_id', id);
@@ -137,7 +137,7 @@ export async function PUT(
       );
     }
 
-    const { id, imageId } = params;
+    const { id, imageId } = await params;
     
     if (!id || !imageId) {
       return NextResponse.json(

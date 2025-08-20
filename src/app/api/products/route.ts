@@ -15,8 +15,8 @@ const createProductSchema = z.object({
   preparation_time: z.string().optional(),
   is_active: z.boolean().default(true),
   is_featured: z.boolean().default(false),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
+  seo_title: z.string().optional(),
+  seo_description: z.string().optional(),
 });
 
 // GET - Listar produtos
@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
         ingredients,
         allergens,
         preparation_time,
-        meta_title,
-        meta_description,
+        seo_title,
+        seo_description,
         created_at,
         updated_at,
         category:categories(id, name, slug),
@@ -122,6 +122,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validar se os dados são válidos
+    if (!Array.isArray(products)) {
+      console.error('Invalid products data received:', products);
+      return NextResponse.json(
+        { success: false, error: { message: 'Dados inválidos recebidos', code: 'INVALID_DATA' } },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -163,7 +172,7 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           error: { 
-            message: validationResult.error.issues[0].message, 
+            message: validationResult.error.issues[0]?.message || 'Dados inválidos', 
             code: 'VALIDATION_ERROR',
             details: validationResult.error.issues
           } 

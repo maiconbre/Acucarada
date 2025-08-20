@@ -75,7 +75,7 @@ export default function ProfilePage() {
       } else {
         setError(result.error?.message || 'Erro ao alterar senha');
       }
-    } catch (err) {
+    } catch {
       setError('Erro de conexão');
     } finally {
       setIsChangingPassword(false);

@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { createProductWithRedirect } from '@/lib/actions/products';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
+import { useFormStatus } from 'react-dom';
+import { ImageUpload, type ImagePreview } from '@/components/ui/image-upload';
 
 interface Category {
   id: string;
@@ -21,20 +22,23 @@ interface Category {
   slug: string;
 }
 
-interface ProductImage {
-  id?: string;
-  url: string;
-  alt_text?: string;
-  is_primary?: boolean;
+// Interface removida - usando ImagePreview do componente ImageUpload
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? 'Criando...' : 'Criar Produto'}
+    </Button>
+  );
 }
 
 export default function NovoProductPage() {
-  const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [images, setImages] = useState<ProductImage[]>([]);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [images, setImages] = useState<ImagePreview[]>([]);
+
   
   const [formData, setFormData] = useState({
     name: '',
@@ -48,17 +52,13 @@ export default function NovoProductPage() {
     preparation_time: '',
     is_active: true,
     is_featured: false,
-    meta_title: '',
-    meta_description: '',
+    seo_title: '',
+    seo_description: '',
   });
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -76,7 +76,11 @@ export default function NovoProductPage() {
         variant: "destructive",
       });
     }
-  };
+  }, [supabase, toast]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const generateSlug = (name: string) => {
     return name
@@ -112,93 +116,23 @@ export default function NovoProductPage() {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione apenas arquivos de imagem.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Erro",
-        description: "A imagem deve ter no máximo 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploadingImage(true);
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `products/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-      const newImage: ProductImage = {
-        url: publicUrl,
-        alt_text: formData.name || 'Produto',
-        is_primary: images.length === 0
-      };
-
-      setImages(prev => [...prev, newImage]);
-
-      toast({
-        title: "Sucesso",
-        description: "Imagem enviada com sucesso!",
-      });
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível fazer upload da imagem.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingImage(false);
-    }
+  const handleImagesChange = (newImages: ImagePreview[]) => {
+    setImages(newImages);
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => {
-      const newImages = prev.filter((_, i) => i !== index);
-      // If we removed the primary image, make the first one primary
-      if (prev[index]?.is_primary && newImages.length > 0) {
-        newImages[0].is_primary = true;
-      }
-      return newImages;
-    });
+  // As imagens já são enviadas automaticamente pelo componente ImageUpload
+  // Apenas extraímos as URLs das imagens
+  const getImageUrls = (imageFiles: ImagePreview[]): string[] => {
+    return imageFiles.map(image => image.url);
   };
 
-  const setPrimaryImage = (index: number) => {
-    setImages(prev => prev.map((img, i) => ({
-      ...img,
-      is_primary: i === index
-    })));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (formData: FormData) => {
+    // Validação client-side básica
+    const name = formData.get('name') as string;
+    const price = formData.get('price') as string;
+    const category_id = formData.get('category_id') as string;
     
-    if (!formData.name || !formData.price || !formData.category_id) {
+    if (!name || !price || !category_id) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -216,53 +150,22 @@ export default function NovoProductPage() {
       return;
     }
 
-    setLoading(true);
-
     try {
-      // Create product
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .insert({
-          name: formData.name,
-          slug: formData.slug,
-          short_description: formData.short_description,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          category_id: formData.category_id,
-          ingredients: formData.ingredients || null,
-          allergens: formData.allergens || null,
-          preparation_time: formData.preparation_time || null,
-          is_active: formData.is_active,
-          is_featured: formData.is_featured,
-          meta_title: formData.meta_title || formData.name,
-          meta_description: formData.meta_description || formData.short_description,
-        })
-        .select()
-        .single();
+      // Obter URLs das imagens (já foram enviadas pelo ImageUpload)
+      const imageUrls = getImageUrls(images);
+      
+      // Adicionar image_urls ao FormData
+      formData.set('image_urls', JSON.stringify(imageUrls));
 
-      if (productError) throw productError;
-
-      // Create product images
-      const imageInserts = images.map((image, index) => ({
-        product_id: product.id,
-        image_url: image.url,
-        alt_text: image.alt_text || formData.name,
-        display_order: index + 1,
-        is_primary: image.is_primary || false,
-      }));
-
-      const { error: imagesError } = await supabase
-        .from('product_images')
-        .insert(imageInserts);
-
-      if (imagesError) throw imagesError;
-
-      toast({
-        title: "Sucesso",
-        description: "Produto criado com sucesso!",
-      });
-
-      router.push('/admin/produtos');
+      const result = await createProductWithRedirect(formData);
+      
+      if (!result.success) {
+        toast({
+          title: "Erro",
+          description: result.error?.message || "Não foi possível criar o produto.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Erro ao criar produto:', error);
       toast({
@@ -270,8 +173,6 @@ export default function NovoProductPage() {
         description: "Não foi possível criar o produto.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -291,7 +192,11 @@ export default function NovoProductPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form action={handleSubmit} className="space-y-6">
+        {/* Hidden fields for boolean values and image URLs */}
+        <input type="hidden" name="is_active" value={formData.is_active.toString()} />
+        <input type="hidden" name="is_featured" value={formData.is_featured.toString()} />
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -306,6 +211,7 @@ export default function NovoProductPage() {
                     <Label htmlFor="name">Nome do Produto *</Label>
                     <Input
                       id="name"
+                      name="name"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       placeholder="Ex: Bolo de Chocolate"
@@ -316,6 +222,7 @@ export default function NovoProductPage() {
                     <Label htmlFor="slug">Slug (URL)</Label>
                     <Input
                       id="slug"
+                      name="slug"
                       value={formData.slug}
                       onChange={(e) => handleInputChange('slug', e.target.value)}
                       placeholder="bolo-de-chocolate"
@@ -327,6 +234,7 @@ export default function NovoProductPage() {
                   <Label htmlFor="short_description">Descrição Curta</Label>
                   <Input
                     id="short_description"
+                    name="short_description"
                     value={formData.short_description}
                     onChange={(e) => handleInputChange('short_description', e.target.value)}
                     placeholder="Descrição breve que aparece nos cards"
@@ -337,6 +245,7 @@ export default function NovoProductPage() {
                   <Label htmlFor="description">Descrição Completa</Label>
                   <Textarea
                     id="description"
+                    name="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Descrição detalhada do produto"
@@ -349,6 +258,7 @@ export default function NovoProductPage() {
                     <Label htmlFor="price">Preço (R$) *</Label>
                     <Input
                       id="price"
+                      name="price"
                       type="number"
                       step="0.01"
                       min="0"
@@ -361,6 +271,7 @@ export default function NovoProductPage() {
                   <div className="space-y-2">
                     <Label htmlFor="category_id">Categoria *</Label>
                     <Select
+                      name="category_id"
                       value={formData.category_id}
                       onValueChange={(value) => handleInputChange('category_id', value)}
                     >
@@ -390,6 +301,7 @@ export default function NovoProductPage() {
                   <Label htmlFor="ingredients">Ingredientes</Label>
                   <Textarea
                     id="ingredients"
+                    name="ingredients"
                     value={formData.ingredients}
                     onChange={(e) => handleInputChange('ingredients', e.target.value)}
                     placeholder="Liste os principais ingredientes"
@@ -401,6 +313,7 @@ export default function NovoProductPage() {
                   <Label htmlFor="allergens">Alérgenos</Label>
                   <Input
                     id="allergens"
+                    name="allergens"
                     value={formData.allergens}
                     onChange={(e) => handleInputChange('allergens', e.target.value)}
                     placeholder="Ex: Contém glúten, leite, ovos"
@@ -411,6 +324,7 @@ export default function NovoProductPage() {
                   <Label htmlFor="preparation_time">Tempo de Preparo</Label>
                   <Input
                     id="preparation_time"
+                    name="preparation_time"
                     value={formData.preparation_time}
                     onChange={(e) => handleInputChange('preparation_time', e.target.value)}
                     placeholder="Ex: 2-3 dias úteis"
@@ -426,21 +340,23 @@ export default function NovoProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="meta_title">Título SEO</Label>
+                  <Label htmlFor="seo_title">Título SEO</Label>
                   <Input
-                    id="meta_title"
-                    value={formData.meta_title}
-                    onChange={(e) => handleInputChange('meta_title', e.target.value)}
+                    id="seo_title"
+                    name="seo_title"
+                    value={formData.seo_title}
+                    onChange={(e) => handleInputChange('seo_title', e.target.value)}
                     placeholder="Título para mecanismos de busca"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="meta_description">Descrição SEO</Label>
+                  <Label htmlFor="seo_description">Descrição SEO</Label>
                   <Textarea
-                    id="meta_description"
-                    value={formData.meta_description}
-                    onChange={(e) => handleInputChange('meta_description', e.target.value)}
+                    id="seo_description"
+                    name="seo_description"
+                    value={formData.seo_description}
+                    onChange={(e) => handleInputChange('seo_description', e.target.value)}
                     placeholder="Descrição para mecanismos de busca"
                     rows={3}
                   />
@@ -482,67 +398,16 @@ export default function NovoProductPage() {
               <CardHeader>
                 <CardTitle>Imagens do Produto</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Upload Button */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                    disabled={uploadingImage}
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Upload className="w-8 h-8 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      {uploadingImage ? 'Enviando...' : 'Clique para adicionar imagem'}
-                    </span>
-                  </label>
-                </div>
-
-                {/* Image List */}
-                {images.length > 0 && (
-                  <div className="space-y-3">
-                    {images.map((image, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                        <img
-                          src={image.url}
-                          alt={image.alt_text}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            {image.is_primary && (
-                              <Badge variant="secondary">Principal</Badge>
-                            )}
-                            {!image.is_primary && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setPrimaryImage(index)}
-                              >
-                                Tornar principal
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <CardContent>
+                <ImageUpload
+                  images={images}
+                  onImagesChange={handleImagesChange}
+                  maxImages={10}
+                  uploading={false}
+                  multiple={true}
+                  showPrimaryToggle={true}
+                  showSortOrder={false}
+                />
               </CardContent>
             </Card>
           </div>
@@ -553,9 +418,7 @@ export default function NovoProductPage() {
           <Button type="button" variant="outline" asChild>
             <Link href="/admin/produtos">Cancelar</Link>
           </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Criando...' : 'Criar Produto'}
-          </Button>
+          <SubmitButton />
         </div>
       </form>
     </div>

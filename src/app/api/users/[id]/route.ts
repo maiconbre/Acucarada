@@ -10,9 +10,9 @@ const updateUserSchema = z.object({
 });
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET - Obter usuário específico
@@ -26,8 +26,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const { id } = await params;
     // Superadmin pode ver qualquer usuário, admin só pode ver a si mesmo
-    if (session.user.role !== 'superadmin' && session.user.id !== params.id) {
+    if (session.user.role !== 'superadmin' && session.user.id !== id) {
       return NextResponse.json(
         { success: false, error: { message: 'Acesso negado', code: 'UNAUTHORIZED' } },
         { status: 403 }
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { data: user, error } = await supabase
       .from('users')
       .select('id, username, role, is_active, last_login, created_at, updated_at')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error || !user) {
@@ -73,9 +74,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const { id } = await params;
     // Verificar permissões
     const isSuperAdmin = session.user.role === 'superadmin';
-    const isOwnProfile = session.user.id === params.id;
+    const isOwnProfile = session.user.id === id;
 
     if (!isSuperAdmin && !isOwnProfile) {
       return NextResponse.json(
@@ -92,7 +94,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { 
           success: false, 
           error: { 
-            message: validationResult.error.issues[0].message, 
+            message: validationResult.error.issues[0]?.message || 'Dados inválidos', 
             code: 'INVALID_CREDENTIALS' 
           } 
         },
@@ -115,7 +117,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { data: existingUser } = await supabase
       .from('users')
       .select('id, username, role')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (!existingUser) {
@@ -133,18 +135,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const result = await updateUser(params.id, userData, session.user.username, request);
+    const result = await updateUser(id, userData, session.user.username, request);
 
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });
     }
 
-    // Remover senha hash da resposta
-    const { password_hash, ...userWithoutPassword } = result.data!;
-
     return NextResponse.json({
       success: true,
-      data: userWithoutPassword,
+      data: result.data,
     });
 
   } catch (error) {
@@ -167,6 +166,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const { id } = await params;
     if (session.user.role !== 'superadmin') {
       return NextResponse.json(
         { success: false, error: { message: 'Acesso negado', code: 'UNAUTHORIZED' } },
@@ -175,14 +175,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Superadmin não pode deletar a si mesmo
-    if (session.user.id === params.id) {
+    if (session.user.id === id) {
       return NextResponse.json(
         { success: false, error: { message: 'Superadmin não pode desativar a si mesmo', code: 'UNAUTHORIZED' } },
         { status: 400 }
       );
     }
 
-    const result = await updateUser(params.id, { is_active: false }, session.user.username, request);
+    const result = await updateUser(id, { is_active: false }, session.user.username, request);
 
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });

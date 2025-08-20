@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
+import { ImageUpload, ImagePreview } from '@/components/ui/image-upload';
 
 export default function NovaCategoriaPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imageUrl, setImageUrl] = useState('');
+
+  const [images, setImages] = useState<ImagePreview[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -65,67 +66,14 @@ export default function NovaCategoriaPage() {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione apenas arquivos de imagem.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Erro",
-        description: "A imagem deve ter no máximo 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploadingImage(true);
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `categories/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-      setImageUrl(publicUrl);
-
-      toast({
-        title: "Sucesso",
-        description: "Imagem enviada com sucesso!",
-      });
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível fazer upload da imagem.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingImage(false);
-    }
+  const handleImagesChange = (newImages: ImagePreview[]) => {
+    setImages(newImages);
   };
 
-  const removeImage = () => {
-    setImageUrl('');
+  // As imagens já são enviadas automaticamente pelo componente ImageUpload
+  // Apenas extraímos a URL da imagem
+  const getImageUrl = (imageFile: ImagePreview): string | null => {
+    return imageFile.url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +91,12 @@ export default function NovaCategoriaPage() {
     setLoading(true);
 
     try {
+      // Obter URL da imagem se houver (já foi enviada pelo ImageUpload)
+      let imageUrl = null;
+      if (images.length > 0) {
+        imageUrl = images[0] ? getImageUrl(images[0]) : null;
+      }
+
       // Check if slug already exists
       const { data: existingCategory } = await supabase
         .from('categories')
@@ -166,7 +120,7 @@ export default function NovaCategoriaPage() {
           name: formData.name,
           slug: formData.slug,
           description: formData.description || null,
-          image_url: imageUrl || null,
+          image_url: imageUrl,
           is_active: formData.is_active,
           meta_title: formData.meta_title || formData.name,
           meta_description: formData.meta_description || formData.description,
@@ -308,67 +262,15 @@ export default function NovaCategoriaPage() {
                 <CardTitle>Imagem da Categoria</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!imageUrl ? (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                      disabled={uploadingImage}
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className="cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <Upload className="w-8 h-8 text-gray-400" />
-                      <span className="text-sm text-gray-600">
-                        {uploadingImage ? 'Enviando...' : 'Clique para adicionar imagem'}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        Máximo 5MB
-                      </span>
-                    </label>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <img
-                        src={imageUrl}
-                        alt="Preview"
-                        className="w-full aspect-video object-cover rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={removeImage}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => document.getElementById('image-upload')?.click()}
-                      disabled={uploadingImage}
-                    >
-                      {uploadingImage ? 'Enviando...' : 'Alterar Imagem'}
-                    </Button>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                      disabled={uploadingImage}
-                    />
-                  </div>
-                )}
+                <ImageUpload
+                  images={images}
+                  onImagesChange={handleImagesChange}
+                  maxImages={1}
+                  uploading={loading}
+                  multiple={false}
+                  showPrimaryToggle={false}
+                  showSortOrder={false}
+                />
               </CardContent>
             </Card>
           </div>
