@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -61,7 +61,7 @@ interface Product {
     id: string;
     name: string;
     slug: string;
-  } | null;
+  }[] | null;
   product_images: {
     id: string;
     image_url: string;
@@ -97,12 +97,7 @@ export default function AdminProductsPage() {
   const { toast } = useToast();
   const itemsPerPage = 12;
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [searchTerm, selectedCategory, statusFilter, sortBy, currentPage]);
-
-  async function fetchCategories() {
+  const fetchCategories = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -120,9 +115,9 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
     }
-  }
+  }, []);
 
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     try {
       const supabase = createClient();
       
@@ -252,7 +247,12 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [searchTerm, selectedCategory, statusFilter, sortBy, currentPage, toast]);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
   async function handleDeleteProduct(productId: string) {
     try {
@@ -419,7 +419,7 @@ export default function AdminProductsPage() {
                     {product.short_description}
                   </p>
                   <div className="flex items-center gap-4 text-sm text-brown-500">
-                    <span>Categoria: {product.categories?.name || 'Sem categoria'}</span>
+                    <span>Categoria: {product.categories?.[0]?.name || 'Sem categoria'}</span>
                     <span>Criado: {formatDate(product.created_at)}</span>
                     <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
@@ -578,7 +578,7 @@ export default function AdminProductsPage() {
             </div>
             
             <div className="flex items-center justify-between text-xs text-brown-500">
-              <span>{product.categories?.name || 'Sem categoria'}</span>
+              <span>{product.categories?.[0]?.name || 'Sem categoria'}</span>
               <div className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
                 {product.views_count}

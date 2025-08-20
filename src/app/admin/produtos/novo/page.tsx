@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -38,7 +38,7 @@ export default function NovoProductPage() {
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<ImagePreview[]>([]);
-  const [uploadingImage, setUploadingImage] = useState(false);
+
   
   const [formData, setFormData] = useState({
     name: '',
@@ -58,11 +58,7 @@ export default function NovoProductPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -80,7 +76,11 @@ export default function NovoProductPage() {
         variant: "destructive",
       });
     }
-  };
+  }, [supabase, toast]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const generateSlug = (name: string) => {
     return name
@@ -403,7 +403,7 @@ export default function NovoProductPage() {
                   images={images}
                   onImagesChange={handleImagesChange}
                   maxImages={10}
-                  uploading={uploadingImage}
+                  uploading={false}
                   multiple={true}
                   showPrimaryToggle={true}
                   showSortOrder={false}

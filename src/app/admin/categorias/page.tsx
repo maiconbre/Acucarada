@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -62,11 +62,7 @@ export default function CategoriasPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -98,7 +94,11 @@ export default function CategoriasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, toast]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const toggleCategoryStatus = async (category: Category) => {
     try {
@@ -380,7 +380,7 @@ export default function CategoriasPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a categoria "{categoryToDelete?.name}"?
+              Tem certeza que deseja excluir a categoria &ldquo;{categoryToDelete?.name}&rdquo;?
               {categoryToDelete?.products_count && categoryToDelete.products_count > 0 && (
                 <span className="block mt-2 text-red-600 font-medium">
                   Esta categoria possui {categoryToDelete.products_count} produto{categoryToDelete.products_count !== 1 ? 's' : ''}. 

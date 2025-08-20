@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+
 
 interface Category {
   id: string;
@@ -70,11 +70,8 @@ export default function EditProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [images, setImages] = useState<ImagePreview[]>([]);
-  const [uploadingImage, setUploadingImage] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -94,12 +91,7 @@ export default function EditProductPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchCategories();
-    fetchProduct();
-  }, [productId]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -117,9 +109,9 @@ export default function EditProductPage() {
         variant: 'destructive',
       });
     }
-  };
+  }, [supabase, toast]);
 
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -157,7 +149,7 @@ export default function EditProductPage() {
         });
         
         // Set existing images
-        const existingImages: ImagePreview[] = data.product_images?.map((img: ProductImage, index: number) => ({
+        const existingImages: ImagePreview[] = data.product_images?.map((img: ProductImage) => ({
           id: img.id,
           url: img.image_url,
           alt_text: img.alt_text,
@@ -177,7 +169,12 @@ export default function EditProductPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, supabase, toast, router]);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchProduct();
+  }, [fetchCategories, fetchProduct]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -196,54 +193,7 @@ export default function EditProductPage() {
     }
   };
 
-  const handleImageUpload = async (file: File): Promise<string | null> => {
-    try {
-      // Validate file
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: 'Erro',
-          description: 'Por favor, selecione apenas arquivos de imagem',
-          variant: 'destructive',
-        });
-        return null;
-      }
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        toast({
-          title: 'Erro',
-          description: 'A imagem deve ter no máximo 5MB',
-          variant: 'destructive',
-        });
-        return null;
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `products/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Erro no upload:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao fazer upload da imagem',
-        variant: 'destructive',
-      });
-      return null;
-    }
-  };
 
   const handleImagesChange = (newImages: ImagePreview[]) => {
     setImages(newImages);
@@ -265,7 +215,7 @@ export default function EditProductPage() {
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError('');
 
     try {
@@ -288,7 +238,7 @@ export default function EditProductPage() {
       console.error('Erro ao atualizar produto:', error);
       setError('Erro interno do servidor');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -543,7 +493,7 @@ export default function EditProductPage() {
                   images={images}
                   onImagesChange={handleImagesChange}
                   maxImages={10}
-                  uploading={uploadingImage}
+                  uploading={loading}
                   multiple={true}
                   showPrimaryToggle={true}
                   showSortOrder={true}

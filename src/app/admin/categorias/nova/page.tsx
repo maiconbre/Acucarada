@@ -18,7 +18,7 @@ export default function NovaCategoriaPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
+
   const [images, setImages] = useState<ImagePreview[]>([]);
   
   const [formData, setFormData] = useState({
@@ -266,7 +266,7 @@ export default function NovaCategoriaPage() {
                   images={images}
                   onImagesChange={handleImagesChange}
                   maxImages={1}
-                  uploading={uploadingImage}
+                  uploading={loading}
                   multiple={false}
                   showPrimaryToggle={false}
                   showSortOrder={false}

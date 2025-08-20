@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,8 +30,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { 
   Plus, 
-  Edit, 
-  Trash2, 
   User, 
   Shield, 
   Clock, 
@@ -53,7 +51,7 @@ const createUserSchema = z.object({
 type CreateUserFormData = z.infer<typeof createUserSchema>;
 
 export default function UsersPage() {
-  const { session, isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useAuth();
   const [users, setUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -70,21 +68,7 @@ export default function UsersPage() {
     resolver: zodResolver(createUserSchema),
   });
 
-  // Verificar se é superadmin
-  if (!isSuperAdmin) {
-    return (
-      <div className="container mx-auto py-8">
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            Acesso negado. Apenas superadministradores podem gerenciar usuários.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/users');
@@ -95,12 +79,12 @@ export default function UsersPage() {
       } else {
         setError(result.error?.message || 'Erro ao carregar usuários');
       }
-    } catch (err) {
+    } catch {
       setError('Erro de conexão');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const createUser = async (data: CreateUserFormData) => {
     setIsCreating(true);
@@ -130,7 +114,7 @@ export default function UsersPage() {
       } else {
         setError(result.error?.message || 'Erro ao criar usuário');
       }
-    } catch (err) {
+    } catch {
       setError('Erro de conexão');
     } finally {
       setIsCreating(false);
@@ -157,14 +141,28 @@ export default function UsersPage() {
       } else {
         setError(result.error?.message || 'Erro ao alterar status do usuário');
       }
-    } catch (err) {
+    } catch {
       setError('Erro de conexão');
     }
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
+
+  // Verificar se é superadmin
+  if (!isSuperAdmin) {
+    return (
+      <div className="container mx-auto py-8">
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>
+            Acesso negado. Apenas superadministradores podem gerenciar usuários.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR');
