@@ -22,36 +22,47 @@ interface Product {
 }
 
 async function getFeaturedProducts(): Promise<Product[]> {
-  const supabase = createClient();
-  
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      id,
-      name,
-      short_description,
-      price,
-      slug,
-      category:categories(name),
-      product_images(image_url, alt_text)
-    `)
-    .eq('is_active', true)
-    .eq('is_featured', true)
-    .order('created_at', { ascending: false })
-    .limit(6);
+  try {
+    // Verificar se as variáveis de ambiente estão disponíveis
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Variáveis de ambiente do Supabase não configuradas');
+      return [];
+    }
 
-  if (error) {
-    console.error('Erro ao buscar produtos:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-      fullError: error
-    });
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        short_description,
+        price,
+        slug,
+        category:categories(name),
+        product_images(image_url, alt_text)
+      `)
+      .eq('is_active', true)
+      .eq('is_featured', true)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (error) {
+      console.error('Erro ao buscar produtos:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erro crítico ao buscar produtos:', error);
     return [];
   }
-
-  return data || [];
 }
 
 function ProductCard({ product, index }: { product: Product; index: number }) {
